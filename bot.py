@@ -2035,14 +2035,6 @@ def colbeckdata(update, context):
     elif rasm_raqam == 40:
         buttons = [[InlineKeyboardButton("⬅️", callback_data="⬅️")]]
 
-    elif query.data==context.user_data['captcha_javob']:
-        query.edit_message_caption(caption="To'gri ")
-        print(200)
-
-    elif query.data!=context.user_data['captcha_javob']:
-        query.edit_message_caption(caption="noto'gri ")
-        print(400)
-
     else:
         buttons = [[InlineKeyboardButton("⬅️", callback_data="⬅️"), InlineKeyboardButton("➡️", callback_data="➡️")]]
 
@@ -2633,4 +2625,5 @@ def main():
 
 
 if __name__ == '__main__':
+
     main()
