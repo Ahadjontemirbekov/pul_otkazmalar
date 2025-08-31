@@ -2654,7 +2654,7 @@ def reklama_vaqt(update: Update, context: CallbackContext):
             update.message.reply_text(
                 "Hozirgi vaqtdan oldin yoki hozirgi vaqtdagi vaqtni belgilab bo‘lmaydi. Iltimos, kelajakdagi vaqtni kiriting."
             )
-            return REKLAMA_VAQT
+            return 'REKLAMA_VAQT'
 
         # JobQueue uchun sekundni hisoblash
         delta_seconds = (target_time - now).total_seconds()
@@ -2665,7 +2665,7 @@ def reklama_vaqt(update: Update, context: CallbackContext):
 
     except Exception:
         update.message.reply_text("Vaqtni noto‘g‘ri formatda kiritdingiz. Iltimos HH:MM formatida yozing.")
-        return REKLAMA_VAQT
+        return "REKLAMA_VAQT"
 
 
 # JobQueue orqali yuborish
