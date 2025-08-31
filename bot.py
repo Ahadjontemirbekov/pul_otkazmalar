@@ -2601,6 +2601,8 @@ def menyi(update, context):
     cur.close()
     con.close()
 
+import pytz
+
 def reklama_xabar(update: Update, context: CallbackContext):
     msg = update.message
 
@@ -2636,7 +2638,6 @@ def reklama_xabar(update: Update, context: CallbackContext):
     return 'REKLAMA_VAQT'
 
 
-
 def reklama_vaqt(update: Update, context: CallbackContext):
     vaqt_str = update.message.text.strip()
 
@@ -2646,7 +2647,9 @@ def reklama_vaqt(update: Update, context: CallbackContext):
         if not (0 <= hour <= 23 and 0 <= minute <= 59):
             raise ValueError("Soat yoki daqiqa noto‘g‘ri")
 
-        now = datetime.now()
+        # Toshkent vaqti
+        tz = pytz.timezone("Asia/Tashkent")
+        now = datetime.now(tz)
         target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
         # Hozirgi vaqtdan oldin bo'lsa xato
