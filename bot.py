@@ -4,10 +4,8 @@ from telegram.ext import CallbackQueryHandler, ConversationHandler, CallbackCont
 from telegram import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, \
     BotCommand, Update
 import time
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.patches import Ellipse, Rectangle
-from matplotlib.colors import to_rgba
+from PIL import Image, ImageDraw, ImageFont
+import random
 from telegram import Bot
 import logging
 import datetime
@@ -16,9 +14,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from functools import wraps
 
 games = {}
-import random
 
-captchani_soni=0
+captchani_soni = 0
 
 rasm_raqam = 1
 con = sqlite3.connect('hisoblar.db')
@@ -98,109 +95,72 @@ Sokin musiqa, iliq choy va ijobiy kayfiyat bilan to‘yingan yakshanba bo‘lsin
 Ertaga eng yaxshi haftani boshlash uchun kuch yig‘ – sen bunga tayyorsan! 🏋️‍♂️⚡"""
 }
 
+admin_menyu = [
+    [KeyboardButton('Botga start bosganlar 📝')],
+    [KeyboardButton("Botdan ro'yxatdan o'tganlar  👤"), KeyboardButton("Adminga berilgan savollar 📝")],
+    [KeyboardButton("Foydalanuvchini bloklash 🚫"), KeyboardButton("Adminlik huquqini berish 🤝")],
+    [KeyboardButton("Foydalanuvchini blokdan chiqarish 🫸🏻"), KeyboardButton("Adminlik huquqini olish ☠️")],
+    [KeyboardButton("Blockdagilarni ko'rish 👀"), KeyboardButton("Adminlarni ko'rish 👀")],
 
+]
 
-
-admin_menyu=[
-            [KeyboardButton('Botga start bosganlar 📝')],
-            [KeyboardButton("Botdan ro'yxatdan o'tganlar  👤"),KeyboardButton("Adminga berilgan savollar 📝")],
-            [KeyboardButton("Foydalanuvchini bloklash 🚫"),KeyboardButton("Adminlik huquqini berish 🤝")],
-            [KeyboardButton("Foydalanuvchini blokdan chiqarish 🫸🏻"),KeyboardButton("Adminlik huquqini olish ☠️")],
-            [KeyboardButton("Blockdagilarni ko'rish 👀"),KeyboardButton("Adminlarni ko'rish 👀")],
-
-        ]
-
-
-bosh_menyu=[
-            [KeyboardButton(text="Kartaga pul qo'shish 💳"), KeyboardButton(text="Kartadan pul yechish 💰")],
-            [KeyboardButton(text="Kartadan kartaga pul o'tgazish  💳  🔜  🪪"),
-             KeyboardButton(text="Kartadagi pulni ko'rish 💰")],
-            [KeyboardButton(text="Admin bilan bog'lanish ☘️"), KeyboardButton(text="Boshiga qaytish👑 ⬅️")],
-            [KeyboardButton(text="Savol berish 🪐"), KeyboardButton(text="Ro'yxatdan o'tganlarni ko'rish 📋")],
-            [KeyboardButton(text="💫 Allohning 99ta ismlari ✨"), KeyboardButton(text="Profil uchun rasmlar 👑")],
-            [KeyboardButton(text="⚙️ Sozlamalar"), KeyboardButton(text="Yon daftar 📝")],
-            [KeyboardButton(text="😜 Adminga savol berish ✨"), KeyboardButton(text="Kanal ✨")],
-            [KeyboardButton(text="🎧 My music 🖤"), KeyboardButton(text="📖 Kitoblar ✨")],
-            [KeyboardButton(text="👑 Islomiy multfilimlar 🎞")],
-            [KeyboardButton(text="SMS ✉️ yuborish"),KeyboardButton(text="O'yinlar 🎮")],
-            [KeyboardButton(text="Mening profilim ⚡️")],
-        ]
+bosh_menyu = [
+    [KeyboardButton(text="Kartaga pul qo'shish 💳"), KeyboardButton(text="Kartadan pul yechish 💰")],
+    [KeyboardButton(text="Kartadan kartaga pul o'tgazish  💳  🔜  🪪"),
+     KeyboardButton(text="Kartadagi pulni ko'rish 💰")],
+    [KeyboardButton(text="Admin bilan bog'lanish ☘️"), KeyboardButton(text="Boshiga qaytish👑 ⬅️")],
+    [KeyboardButton(text="Savol berish 🪐"), KeyboardButton(text="Ro'yxatdan o'tganlarni ko'rish 📋")],
+    [KeyboardButton(text="💫 Allohning 99ta ismlari ✨"), KeyboardButton(text="Profil uchun rasmlar 👑")],
+    [KeyboardButton(text="⚙️ Sozlamalar"), KeyboardButton(text="Yon daftar 📝")],
+    [KeyboardButton(text="😜 Adminga savol berish ✨"), KeyboardButton(text="Kanal ✨")],
+    [KeyboardButton(text="🎧 My music 🖤"), KeyboardButton(text="📖 Kitoblar ✨")],
+    [KeyboardButton(text="👑 Islomiy multfilimlar 🎞")],
+    [KeyboardButton(text="SMS ✉️ yuborish"), KeyboardButton(text="O'yinlar 🎮")],
+    [KeyboardButton(text="Mening profilim ⚡️")],
+]
 
 user_ids = set()
 
+
 def create_math_image():
-    # 1. Tasodifiy sonlar va amal
-    a = random.randint(1, 100)
-    b = random.randint(1, 100)
-    operation = random.choice(['+', '-'])
+    a = random.randint(10, 99)
+    b = random.randint(10, 99)
+    misol = f"{a} + {b} = ?"
+    javob = a + b
 
-    if operation == '+':
-        javob = a + b
-    else:
-        # Minus bo‘lganda ham manfiy chiqishi mumkin — o‘zingiz xohlasangiz cheklash mumkin
-        javob = a - b
+    width, height = 400, 200
+    bg_color = (random.randint(150,255), random.randint(150,255), random.randint(150,255))
+    image = Image.new("RGB", (width, height), bg_color)
+    draw = ImageDraw.Draw(image)
 
-    problem = f"{a} {operation} {b} = ?"
-
-    # 2. Rasm parametrlari
-    width, height = 600, 300
-    dpi = 100
-    fig, ax = plt.subplots(figsize=(width / dpi, height / dpi), dpi=dpi)
-
-    # 3. Pastel fon
-    bg_color = np.array([random.randint(200, 240),
-                         random.randint(200, 240),
-                         random.randint(200, 240)]) / 255
-    fig.patch.set_facecolor(bg_color)
-    ax.set_xlim(0, width)
-    ax.set_ylim(0, height)
-
-    # 4. Bezash uchun shakllar
-    for _ in range(15):
-        shape_type = random.choice(['circle', 'rectangle', 'ellipse'])
-        x = random.randint(0, width)
-        y = random.randint(0, height)
-        size = random.randint(20, 100)
-        color = to_rgba((random.random(), random.random(), random.random(), 0.1))
-
-        if shape_type == 'circle':
-            ax.add_patch(plt.Circle((x, y), size / 2, color=color, linewidth=0))
-        elif shape_type == 'rectangle':
-            ax.add_patch(Rectangle((x, y), size, size / 2, color=color, angle=random.randint(0, 45)))
-        else:
-            ax.add_patch(Ellipse((x, y), size, size / 2, angle=random.randint(0, 360), color=color, linewidth=0))
-
-    # 5. Chiziqlar
-    for _ in range(10):
+    # 📌 Chiziqlar chizamiz
+    for _ in range(25):
         x1, y1 = random.randint(0, width), random.randint(0, height)
         x2, y2 = random.randint(0, width), random.randint(0, height)
-        ax.plot([x1, x2], [y1, y2],
-                color=(random.random(), random.random(), random.random(), random.uniform(0.05, 0.2)),
-                linewidth=random.uniform(0.5, 2),
-                linestyle='--')
+        color = (random.randint(0,255), random.randint(0,255), random.randint(0,255))
+        draw.line((x1, y1, x2, y2), fill=color, width=1)
 
-    # 6. Masalani yozish
-    ax.text(width / 2, height / 2, problem,
-            fontsize=48, ha='center', va='center', color='black', fontweight='bold',
-            bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5', alpha=0.8))
+    # ✅ Shrift yuklash (agar Arial bo‘lmasa, default ishlatiladi)
+    try:
+        font = ImageFont.truetype("C:/Windows/Fonts/Arial.ttf", 50)
+    except OSError:
+        font = ImageFont.load_default()
 
-    # 7. Yengil grid
-    for x in range(0, width, 40):
-        ax.axvline(x, color='white', alpha=0.1, linewidth=1)
-    for y in range(0, height, 40):
-        ax.axhline(y, color='white', alpha=0.1, linewidth=1)
+    # 📌 Matn markazga joylashtiriladi
+    bbox = draw.textbbox((0, 0), misol, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    text_x = (width - text_w) // 2
+    text_y = (height - text_h) // 2
 
-    ax.axis('off')
-    plt.tight_layout()
+    draw.text((text_x, text_y), misol, fill=(0, 0, 0), font=font)
 
-    # 8. Faylni saqlash (doim bir xil nom)
-    filename = "captcha.png"
-    plt.savefig(filename, bbox_inches='tight', pad_inches=0.1, dpi=dpi)
-    plt.close()
+    # 📌 Rasmni saqlash
+    image.save("captcha.png")
+    return "captcha.png", javob
 
-    return filename, javob
 
-def xato_captcha(update,context):
+def xato_captcha(update, context):
     file, ans = create_math_image()
     x1 = random.randint(10, 99)
     x2 = random.randint(10, 99)
@@ -230,22 +190,21 @@ def xato_captcha(update,context):
                            )
 
 
-
 def captcha(func):
     @wraps(func)
     def wrapper(update: Update, context: CallbackContext, *args, **kwargs):
-        if captchani_soni==1:
+        if captchani_soni == 1:
             return func(update, context, *args, **kwargs)
         filename, javob = create_math_image()
-        x1=random.randint(10,99)
-        x2=random.randint(10,99)
-        x3=random.randint(10,99)
+        x1 = random.randint(10, 99)
+        x2 = random.randint(10, 99)
+        x3 = random.randint(10, 99)
 
         context.user_data["true"] = f"Javob {javob}"
         context.user_data["x1"] = f"Javob {x1}"
         context.user_data["x2"] = f"Javob {x2}"
         context.user_data["x3"] = f"Javob {x3}"
-        button =[
+        button = [
             KeyboardButton(f"Javob {x1}"),
             KeyboardButton(f"Javob {javob}"),
             KeyboardButton(f"Javob {x2}"),
@@ -256,7 +215,7 @@ def captcha(func):
 
         photo = open(filename, 'rb')
 
-        reply_markup = ReplyKeyboardMarkup([button],resize_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup([button], resize_keyboard=True)
 
         context.bot.send_photo(chat_id=update.effective_chat.id,
                                photo=photo,
@@ -266,6 +225,7 @@ def captcha(func):
         return "TANLA"
 
     return wrapper
+
 
 def block(func):
     @wraps(func)
@@ -289,8 +249,8 @@ def block(func):
             return
 
         return func(update, context, *args, **kwargs)
-    return wrapper
 
+    return wrapper
 
 
 def adm(func):
@@ -315,6 +275,7 @@ def adm(func):
             return
 
         return func(update, context, *args, **kwargs)
+
     return wrapper
 
 
@@ -427,7 +388,8 @@ def start(update, context):
     con.commit()
     cur.close()
     con.close()
-    
+
+
 @captcha
 @block
 def ism(update, context):
@@ -450,6 +412,8 @@ def ism(update, context):
         update.message.reply_text("*Raxmat 🙃 💫*", parse_mode="Markdown")
         update.message.reply_text("Familya 👤", parse_mode="Markdown")
         return "FAMILYA"
+
+
 @captcha
 @block
 def familya(update, context):
@@ -457,6 +421,8 @@ def familya(update, context):
     update.message.reply_text('*Raxmat 🙃 💫*', parse_mode="Markdown")
     update.message.reply_text('yosh 📆', parse_mode="Markdown")
     return "YOSH"
+
+
 @captcha
 @block
 def yosh(update, context):
@@ -466,6 +432,8 @@ def yosh(update, context):
     update.message.reply_text('Telefon raqam 📞', parse_mode="Markdown",
                               reply_markup=ReplyKeyboardMarkup(k, one_time_keyboard=True, resize_keyboard=True))
     return "TELEFON_RAQAM"
+
+
 @captcha
 @block
 def telefon_raqam(update, context):
@@ -483,6 +451,8 @@ def telefon_raqam(update, context):
             'Iltimos, kontaktni tugma orqali yuboring 📱'
         )
         return "TELEFON"
+
+
 @captcha
 @block
 def parol(update, context):
@@ -490,15 +460,17 @@ def parol(update, context):
     update.message.reply_text('*Raxmat 🙃 💫*', parse_mode="Markdown")
     update.message.reply_text('_Qancha pul qoymoqchisiz_', parse_mode="Markdown")
     return "PUL"
+
+
 @captcha
 @block
 def pul(update, context):
     context.user_data['pul'] = update.message.text
     update.message.reply_text('*Raxmat 🙃 💫 *\n\n_Malumotlar saqlandi 🗂_', parse_mode="Markdown")
 
-
     update.message.reply_text("*☘️ Asosiy menyu ✨*", parse_mode="Markdown",
-                              reply_markup=ReplyKeyboardMarkup(bosh_menyu, one_time_keyboard=False, resize_keyboard=True))
+                              reply_markup=ReplyKeyboardMarkup(bosh_menyu, one_time_keyboard=False,
+                                                               resize_keyboard=True))
 
     con = sqlite3.connect('hisoblar.db')
     cur = con.cursor()
@@ -560,15 +532,19 @@ def pul(update, context):
     con.close()
 
     return "TANLA"
+
+
 @captcha
 @block
 def clear(update, context):
     update.message.reply_text('*Raxmat 🙃 💫*', parse_mode="Markdown")
     return ConversationHandler.END
+
+
 @captcha
 @adm
 @block
-def bocklash_id(update,context):
+def bocklash_id(update, context):
     if update.message.text.isdigit():
         con = sqlite3.connect('hisoblar.db')
         cur = con.cursor()
@@ -585,7 +561,7 @@ def bocklash_id(update,context):
 
 @adm
 @block
-def adminlik_id(update,context):
+def adminlik_id(update, context):
     if update.message.text.isdigit():
         con = sqlite3.connect('hisoblar.db')
         cur = con.cursor()
@@ -598,6 +574,8 @@ def adminlik_id(update,context):
         return "TANLA"
     else:
         update.message.reply_text("Iltimos faqat son yuboring")
+
+
 @captcha
 @block
 def kiruvchi_ism(update, context):
@@ -615,6 +593,8 @@ def kiruvchi_ism(update, context):
                 return "KIRUVCHI_PAROL"
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def kiruvchi_parol(update, context):
@@ -686,7 +666,7 @@ def yorilgan_xabar(update, context):
         ]
         update.message.reply_text("🌿 Assalomu alaykum ✨", reply_markup=InlineKeyboardMarkup(k))
         return "TANLA"
-    elif text=="O'yinlar 🎮":
+    elif text == "O'yinlar 🎮":
         keyboard = [
             [InlineKeyboardButton("🔫", web_app={"url": "https://krunker.io/"})],
             [InlineKeyboardButton("🏎", web_app={"url": "https://slowroads.io/#A2-b220e4d5@2.99"})],
@@ -711,7 +691,7 @@ def yorilgan_xabar(update, context):
         cur = con.cursor()
         cur.execute("SELECT id FROM bloclar ;")
         blocklar = cur.fetchall()
-        if not blocklar :
+        if not blocklar:
             update.message.reply_text("Blocklanganlar yo'q")
         else:
             for i in blocklar:
@@ -723,7 +703,7 @@ def yorilgan_xabar(update, context):
         cur = con.cursor()
         cur.execute("SELECT id FROM adminlar ;")
         blocklar = cur.fetchall()
-        if not blocklar :
+        if not blocklar:
             update.message.reply_text("Adminlar yo'q")
         else:
             for i in blocklar:
@@ -735,20 +715,22 @@ def yorilgan_xabar(update, context):
         return "adminlik_id"
 
 
-    elif text.isdigit() :
+    elif text.isdigit():
         con = sqlite3.connect("hisoblar.db")
         cur = con.cursor()
-        cur.execute("SELECT id FROM bloclar WHERE id =?",(text,))
+        cur.execute("SELECT id FROM bloclar WHERE id =?", (text,))
         blocklar = cur.fetchall()
 
         if blocklar:
             cur.execute("DELETE FROM bloclar WHERE id=?", (text,))
             con.commit()
-            update.message.reply_text('Foydalanuvchi blockdan chiqarildi🫷🏻 ',reply_markup=(ReplyKeyboardMarkup(admin_menyu,resize_keyboard=True)))
+            update.message.reply_text('Foydalanuvchi blockdan chiqarildi🫷🏻 ',
+                                      reply_markup=(ReplyKeyboardMarkup(admin_menyu, resize_keyboard=True)))
         else:
             cur.execute("DELETE FROM adminlar WHERE id=?", (text,))
             con.commit()
-            update.message.reply_text('Foydalanuvchi adminlik huquqidan chiqarildi🫷🏻 ',reply_markup=(ReplyKeyboardMarkup(admin_menyu,resize_keyboard=True)))
+            update.message.reply_text('Foydalanuvchi adminlik huquqidan chiqarildi🫷🏻 ',
+                                      reply_markup=(ReplyKeyboardMarkup(admin_menyu, resize_keyboard=True)))
 
 
     elif text == "Foydalanuvchini blokdan chiqarish 🫸🏻":
@@ -784,7 +766,7 @@ def yorilgan_xabar(update, context):
     elif text == "Botga start bosganlar 📝":
         con = sqlite3.connect('hisoblar.db')
         cur = con.cursor()
-        cur.execute("SELECT * FROM start_bosganlar ;" )
+        cur.execute("SELECT * FROM start_bosganlar ;")
         natijalar = cur.fetchall()
         for i in natijalar:
             update.message.reply_text(text=f"""
@@ -795,7 +777,7 @@ def yorilgan_xabar(update, context):
         Foydalanuvchi 👤 vaqt : {i[4]}
             """)
         return "TANLA"
-    elif text=="Adminga berilgan savollar 📝":
+    elif text == "Adminga berilgan savollar 📝":
         con = sqlite3.connect('hisoblar.db')
         cur = con.cursor()
         cur.execute("SELECT * FROM adminga_Savol;")
@@ -811,7 +793,7 @@ def yorilgan_xabar(update, context):
             """)
         return "TANLA"
 
-    elif text=="Botdan ro'yxatdan o'tganlar  👤":
+    elif text == "Botdan ro'yxatdan o'tganlar  👤":
         con = sqlite3.connect('hisoblar.db')
         cur = con.cursor()
         cur.execute("SELECT * FROM users;")
@@ -986,47 +968,47 @@ def yorilgan_xabar(update, context):
         return "KARTAGA_PUL_YECHISH_ISM"
 
 
-    elif text=="bexruzni rasmi":
+    elif text == "bexruzni rasmi":
         update.message.reply_text(text="https://t.me/pul_hisoblari/464")
         return "TANLA"
 
 
 
-    elif text=="diyorjonni rasmi":
+    elif text == "diyorjonni rasmi":
         update.message.reply_text(text="https://t.me/pul_hisoblari/465")
         return "TANLA"
 
 
 
 
-    elif text==context.user_data['true']:
+    elif text == context.user_data['true']:
         global captchani_soni
-        captchani_soni+=1
+        captchani_soni += 1
         update.message.reply_text(text="🎉")
         update.message.reply_text(text="Botdan foydalanishingiz mumkin 😊 🎉🎉🎉")
-        start(update,context)
+        start(update, context)
         return "TANLA"
 
 
 
-    elif text==context.user_data['x1']:
+    elif text == context.user_data['x1']:
         update.message.reply_text(text="❌")
         update.message.reply_text(text="Xato boshqattan urining 🧮")
-        xato_captcha(update,context)
+        xato_captcha(update, context)
         return "TANLA"
 
 
-    elif text==context.user_data['x2']:
+    elif text == context.user_data['x2']:
         update.message.reply_text(text="❌")
         update.message.reply_text(text="Xato boshqattan urining 🧮")
-        xato_captcha(update,context)
+        xato_captcha(update, context)
         return "TANLA"
 
 
-    elif text==context.user_data['x3']:
+    elif text == context.user_data['x3']:
         update.message.reply_text(text="❌")
         update.message.reply_text(text="Xato boshqattan urining 🧮")
-        xato_captcha(update,context)
+        xato_captcha(update, context)
         return "TANLA"
 
 
@@ -1115,13 +1097,13 @@ def yorilgan_xabar(update, context):
 
         return "TANLA"
     elif text == "🎧 My music 🖤":
-        k=[
+        k = [
             [KeyboardButton(text="Ruscha qo'shiqlar 🎶")],
             [KeyboardButton(text="Inglishcha qo'shiqlar 🎶")],
             [KeyboardButton(text="Turk qo'shiqlar 🎶")],
             [KeyboardButton(text="💫 Menyuga qaytish ⬅️")],
         ]
-        update.message.reply_text(text="Qo'shiq turi 🎵",reply_markup=ReplyKeyboardMarkup(k,resize_keyboard=True))
+        update.message.reply_text(text="Qo'shiq turi 🎵", reply_markup=ReplyKeyboardMarkup(k, resize_keyboard=True))
         return "TANLA"
 
 
@@ -1329,12 +1311,12 @@ def yorilgan_xabar(update, context):
 
 
     elif text == "👑 Islomiy multfilimlar 🎞":
-        k=[
-            [KeyboardButton(text="Nussa va Rarra tanishamiz"),KeyboardButton(text="🚲 Bismillahni fazilati")],
-            [KeyboardButton(text="😊 Tabassum sadaqadir"),KeyboardButton(text="OYIMGA OXSHASHNI ISTAYMAN")],
-            [KeyboardButton(text="MAHRAM EMAS"),KeyboardButton(text="QOLGAN ISHGA QOR YOG'AR")],
-            [KeyboardButton(text="ONA MEHRI"),KeyboardButton(text="BIRGALASHIB ZIKR QILAYLIK")],
-            [KeyboardButton(text="SIZ OLARMIDINGIZ?"),KeyboardButton(text="TAJRIBA")],
+        k = [
+            [KeyboardButton(text="Nussa va Rarra tanishamiz"), KeyboardButton(text="🚲 Bismillahni fazilati")],
+            [KeyboardButton(text="😊 Tabassum sadaqadir"), KeyboardButton(text="OYIMGA OXSHASHNI ISTAYMAN")],
+            [KeyboardButton(text="MAHRAM EMAS"), KeyboardButton(text="QOLGAN ISHGA QOR YOG'AR")],
+            [KeyboardButton(text="ONA MEHRI"), KeyboardButton(text="BIRGALASHIB ZIKR QILAYLIK")],
+            [KeyboardButton(text="SIZ OLARMIDINGIZ?"), KeyboardButton(text="TAJRIBA")],
             [KeyboardButton(text="📹 Allohning Habibi Muhammad (1-qism, 1-fasl)")],
             [KeyboardButton(text="📹 Allohning Habibi Muhammad (2-qism, 1-fasl)")],
             [KeyboardButton(text="📹 Allohning Habibi Muhammad (3-qism, 1-fasl)")],
@@ -1393,7 +1375,7 @@ def yorilgan_xabar(update, context):
             [KeyboardButton(text="📹 Allohning Habibi Muhammad (26-qism, 2-fasl)")],
             [KeyboardButton(text="💫 Menyuga qaytish ⬅️")],
         ]
-        update.message.reply_text(text="Tanlang",reply_markup=ReplyKeyboardMarkup(k,resize_keyboard=True))
+        update.message.reply_text(text="Tanlang", reply_markup=ReplyKeyboardMarkup(k, resize_keyboard=True))
         return "TANLA"
 
     elif text == "Kartadagi pulni ko'rish 💰":
@@ -1429,7 +1411,8 @@ Foydalanuvchi ro'yxatdan o'tgan vaqti ⏳ 🔜 {i[4]}
     elif text == "💫 Menyuga qaytish ⬅️":
 
         update.message.reply_text("☘️ Asosiy menyu ✨", parse_mode="Markdown",
-                                  reply_markup=ReplyKeyboardMarkup(bosh_menyu, one_time_keyboard=False, resize_keyboard=True))
+                                  reply_markup=ReplyKeyboardMarkup(bosh_menyu, one_time_keyboard=False,
+                                                                   resize_keyboard=True))
         return "TANLA"
     elif text == "Foydalanuvchi ismini o'zgartirish 👤":
         update.message.reply_text(text="Foydalanuvchi 👤 ismi ")
@@ -1537,7 +1520,9 @@ Foydalanuvchi ro'yxatdan o'tgan vaqti ⏳ 🔜 {i[4]}
                  """
             )
     else:
-        update.message.reply_text(f"➡️ {text} ⬅️ Bu so'zizga  tushunmadim\n\n🪐 Menyudan foydalanishingiz mumkin /menyu  🌿\n\n⭕️ Yoki pastda xabar yuboradigan joyda 4 ta nuqtani 🎛 bosing menyu ochiladi ❗️")
+        update.message.reply_text(
+            f"➡️ {text} ⬅️ Bu so'zizga  tushunmadim\n\n🪐 Menyudan foydalanishingiz mumkin /menyu  🌿\n\n⭕️ Yoki pastda xabar yuboradigan joyda 4 ta nuqtani 🎛 bosing menyu ochiladi ❗️")
+
 
 @captcha
 @block
@@ -1557,7 +1542,8 @@ def sms_ism(update, context):
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
         return 'sms_ism'
-    
+
+
 @captcha
 @block
 def sms_xabar(update, context):
@@ -1629,6 +1615,7 @@ def sms_xabar(update, context):
     update.message.reply_text("Xabar muvaffaqiyatli yuborildi.✅")
     return 'TANLA'
 
+
 @captcha
 @block
 def ozgartirmoqchi_bolgan_qayd(update, context):
@@ -1654,6 +1641,8 @@ def ozgartirmoqchi_bolgan_qayd(update, context):
         update.message.reply_text("Uzur, bunday qayd nomi mavjud emas. ✅\n\nBoshqa qayd nomi kiriting 😉")
         update.message.reply_text("Qaydni kiriting 📝")
         return "ozgartirmoqchi_bolgan_qayd"
+
+
 @captcha
 @block
 def adminga_savol_berish(update, context):
@@ -1686,6 +1675,7 @@ def adminga_savol_berish(update, context):
     update.message.reply_text("✨ Raxmat savol saqlandi 📩 sizga 2-3 soatlarda murojatga chiqadi\n\n👑")
     return 'TANLA'
 
+
 @captcha
 @block
 def ozgartirmoqchi_bolgan_qayd_nomi(update, context):
@@ -1711,6 +1701,8 @@ def ozgartirmoqchi_bolgan_qayd_nomi(update, context):
         update.message.reply_text("Uzur, bunday qayd nomi mavjud emas. ✅\n\nBoshqa qayd nomi kiriting 😉")
         update.message.reply_text("Qaydni kiriting 📝")
         return "ozgartirmoqchi_bolgan_qayd_nomi"
+
+
 @captcha
 @block
 def new_qayd_lik(update, context):
@@ -1739,6 +1731,8 @@ def new_qayd_lik(update, context):
         cur.close()
         update.message.reply_text("Qayd nomi o'zgartirildi ✅")
         return "TANLA"
+
+
 @captcha
 @block
 def new_qayd(update, context):
@@ -1752,6 +1746,8 @@ def new_qayd(update, context):
     cur.close()
     update.message.reply_text("Qayd o'zgartirildi ✅")
     return "TANLA"
+
+
 @captcha
 @block
 def ochirmoqchi_bolgan_qayd_nomi(update, context):
@@ -1776,7 +1772,8 @@ def ochirmoqchi_bolgan_qayd_nomi(update, context):
         update.message.reply_text("Uzur, bunday qayd nomi mavjud emas. ✅\n\nBoshqa qayd nomi kiriting 😉")
         update.message.reply_text("Qaydni kiriting 📝")
         return "ochirmoqchi_bolgan_qayd_nomi"
-    
+
+
 @captcha
 @block
 def yon_daftardagi_qaydni_korish_parol(update, context):
@@ -1795,6 +1792,8 @@ def yon_daftardagi_qaydni_korish_parol(update, context):
                 update.message.reply_text(text="Parol xato ❌ ")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def qayd_nomi(update, context):
@@ -1818,7 +1817,8 @@ def qayd_nomi(update, context):
         update.message.reply_text(text="Raxmat ✅")
         update.message.reply_text(text="Qaydni kiriting 📝")
         return "qayd"
-    
+
+
 @captcha
 @block
 def qayd(update, context):
@@ -1854,6 +1854,8 @@ def qayd(update, context):
     update.message.reply_text(text="Raxmat ✅")
     update.message.reply_text(text="Qayd saqlandi 📥")
     return "TANLA"
+
+
 @captcha
 @block
 def Foydalanuvchi_ismini_ozgartirish_ISMI(update, context):
@@ -1873,6 +1875,8 @@ def Foydalanuvchi_ismini_ozgartirish_ISMI(update, context):
                 update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def Yon_daftar_ism(update, context):
@@ -1892,6 +1896,7 @@ def Yon_daftar_ism(update, context):
                 update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
 
 @captcha
 @block
@@ -1922,6 +1927,8 @@ def Yon_daftar_parol(update, context):
                 update.message.reply_text(text="Parol xato ❌ ")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def Foydalanuvchi_ismini_ozgartirish_PAROLI(update, context):
@@ -1942,6 +1949,8 @@ def Foydalanuvchi_ismini_ozgartirish_PAROLI(update, context):
                 update.message.reply_text(text="Parol xato ❌ ")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def YANGI_FOYDALANUVCHI_ISMI(update, context):
@@ -2011,6 +2020,8 @@ def Foydalanuvchi_parolini_ozgartirish_ISMI(update, context):
                 update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def Foydalanuvchi_parolini_ozgartirish_PAROLI(update, context):
@@ -2031,6 +2042,8 @@ def Foydalanuvchi_parolini_ozgartirish_PAROLI(update, context):
                 update.message.reply_text(text="Parol xato ❌ ")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def YANGI_FOYDALANUVCHI_PAROLI(update, context):
@@ -2099,6 +2112,8 @@ def colbeckdata(update, context):
             message_id=query.message.message_id,
             reply_markup=markup
         )
+
+
 @captcha
 @block
 def SAVOL_BER(update, context):
@@ -2133,6 +2148,8 @@ def SAVOL_BER(update, context):
     ]
     update.message.reply_text(text="Savolga javob ⬇️", reply_markup=InlineKeyboardMarkup(k))
     return "TANLA"
+
+
 @captcha
 @block
 def PUL_KORISH_ISM(update, context):
@@ -2152,6 +2169,8 @@ def PUL_KORISH_ISM(update, context):
                 update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def PUL_KORISH_PAROLI(update, context):
@@ -2174,6 +2193,8 @@ def PUL_KORISH_PAROLI(update, context):
                 update.message.reply_text(text="Parol xato ❌ ")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def KARTAGA_PUL_QOSHISH_ISM(update, context):
@@ -2193,6 +2214,8 @@ def KARTAGA_PUL_QOSHISH_ISM(update, context):
                 update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def KARTAGA_PUL_QOSHISH_PAROLI(update, context):
@@ -2212,6 +2235,8 @@ def KARTAGA_PUL_QOSHISH_PAROLI(update, context):
                 update.message.reply_text(text="Parol xato  ❌ ")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def PUL_BERUVCHI(update, context):
@@ -2229,6 +2254,7 @@ def PUL_BERUVCHI(update, context):
                 return "PUL_BERUVCHI_PAROLI"
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
 
 @captcha
 @block
@@ -2249,6 +2275,8 @@ def PUL_BERUVCHI_PAROLI(update, context):
                 update.message.reply_text(text="Parol xato ❌")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def PUL_OLUVCHI(update, context):
@@ -2266,6 +2294,8 @@ def PUL_OLUVCHI(update, context):
                 return "PUL_OLUVCHI_PAROLI"
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def PUL_OLUVCHI_PAROLI(update, context):
@@ -2285,6 +2315,8 @@ def PUL_OLUVCHI_PAROLI(update, context):
                 update.message.reply_text(text="Parol xato ❌")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def qancha(update, context):
@@ -2300,6 +2332,8 @@ def qancha(update, context):
     except ValueError:
         update.message.reply_text("Iltimos, faqat raqam kiriting.")
         return "QANCHA"
+
+
 @captcha
 @block
 def KARTADAN_KARTAGA(update, context):
@@ -2349,6 +2383,8 @@ def KARTADAN_KARTAGA(update, context):
     except sqlite3.Error as e:
         update.message.reply_text(f"⚠️ Xatolik yuz berdi: {e}")
         return "TANLA"
+
+
 @captcha
 @block
 def KARTAGA_PUL_YECHISH_ISM(update, context):
@@ -2368,6 +2404,8 @@ def KARTAGA_PUL_YECHISH_ISM(update, context):
                 update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def KARTAGA_PUL_YECHISH_PAROLI(update, context):
@@ -2387,6 +2425,8 @@ def KARTAGA_PUL_YECHISH_PAROLI(update, context):
                 update.message.reply_text(text="Parol xato  ❌ ")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
+
 @captcha
 @block
 def KARTAGA_PUL_YECHISH(update, context):
@@ -2430,6 +2470,8 @@ def KARTAGA_PUL_YECHISH(update, context):
         cur.close()
         con.close()
     return "TANLA"
+
+
 @captcha
 @block
 def KARTAGA_PUL_QOSHISH(update, context):
@@ -2463,6 +2505,8 @@ def KARTAGA_PUL_QOSHISH(update, context):
     )
     update.message.reply_text(text="Raxmat pul qoshildi ✅")
     return "TANLA"
+
+
 @captcha
 @block
 def help_command(update, context):
@@ -2499,6 +2543,8 @@ def help_command(update, context):
 🆘 Agar muammo bo'lsa: @Ahadjon_tem1rbekov ga yozing!
 """
     update.message.reply_text(help_message)
+
+
 @captcha
 @block
 def menyi(update, context):
@@ -2540,7 +2586,8 @@ def menyi(update, context):
 
     if topildi:
         update.message.reply_text("*☘️ Asosiy menyu ✨*", parse_mode="Markdown",
-                                  reply_markup=ReplyKeyboardMarkup(bosh_menyu, one_time_keyboard=False, resize_keyboard=True))
+                                  reply_markup=ReplyKeyboardMarkup(bosh_menyu, one_time_keyboard=False,
+                                                                   resize_keyboard=True))
         return "TANLA"
 
     con.commit()
@@ -2548,7 +2595,7 @@ def menyi(update, context):
     con.close()
 
 
-def salom_yubor(bot: Bot,context):
+def salom_yubor(bot: Bot, context):
     while True:
         hozir = datetime.datetime.now()
         if hozir.hour == 7 and hozir.minute == 0:
@@ -2563,16 +2610,15 @@ def salom_yubor(bot: Bot,context):
         time.sleep(20)
 
 
-
-
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
 
 @adm
 @captcha
 @block
-def admin(update,context):
-    con=sqlite3.connect('hisoblar.db')
-    cur=con.cursor()
+def admin(update, context):
+    con = sqlite3.connect('hisoblar.db')
+    cur = con.cursor()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS adminlar (
         id INTEGER
@@ -2581,16 +2627,16 @@ def admin(update,context):
     cur.execute("SELECT id FROM adminlar WHERE id=? ;", (update.message.from_user.id,))
     n = cur.fetchone()
     con.close()
-    if n :
+    if n:
 
-        update.message.reply_text("Admin paneliga xush kelibsiz 🤟🏻",reply_markup=(ReplyKeyboardMarkup(admin_menyu,resize_keyboard=True)))
+        update.message.reply_text("Admin paneliga xush kelibsiz 🤟🏻",
+                                  reply_markup=(ReplyKeyboardMarkup(admin_menyu, resize_keyboard=True)))
         return "TANLA"
 
     else:
         update.message.reply_text("🤌🏻")
         update.message.reply_text("Siz admin emassiz 🤌🏻")
         return 'TANLA'
-
 
 
 def main():
@@ -2660,7 +2706,7 @@ def main():
             "adminlik_id": [MessageHandler(Filters.text & ~Filters.command, adminlik_id)],
         },
         fallbacks=[CommandHandler('tugash', clear), CommandHandler('start', start),
-                   CommandHandler('help', help_command) ,CommandHandler('admin', admin),CommandHandler('menyu', menyi)]
+                   CommandHandler('help', help_command), CommandHandler('admin', admin), CommandHandler('menyu', menyi)]
     ))
 
     updater.bot.set_my_commands([
@@ -2670,11 +2716,9 @@ def main():
         BotCommand("admin", "Adminlar uchun"),
     ])
 
-
     bot = updater.bot
     t = threading.Thread(target=salom_yubor, args=(bot,))
     t.start()
-
 
     dp.add_handler(CallbackQueryHandler(colbeckdata))
 
