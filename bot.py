@@ -1,10 +1,13 @@
+import threading
+
 from telegram.ext import CallbackQueryHandler, ConversationHandler, CallbackContext
 from telegram import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, \
     BotCommand, Update
 import time
-from PIL import Image, ImageDraw, ImageFont
-import random
-
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Ellipse, Rectangle
+from matplotlib.colors import to_rgba
 from telegram import Bot
 import logging
 import datetime
@@ -126,38 +129,76 @@ bosh_menyu=[
 user_ids = set()
 
 def create_math_image():
-    a = random.randint(10, 99)
-    b = random.randint(10, 99)
-    misol = f"{a} + {b} = ?"
-    javob = a + b
+    # 1. Tasodifiy sonlar va amal
+    a = random.randint(1, 100)
+    b = random.randint(1, 100)
+    operation = random.choice(['+', '-'])
 
-    width, height = 400, 200
-    bg_color = (random.randint(150,255), random.randint(150,255), random.randint(150,255))
-    image = Image.new("RGB", (width, height), bg_color)
-    draw = ImageDraw.Draw(image)
+    if operation == '+':
+        javob = a + b
+    else:
+        # Minus bo‘lganda ham manfiy chiqishi mumkin — o‘zingiz xohlasangiz cheklash mumkin
+        javob = a - b
 
-    for _ in range(25):
-        x1, y1 = random.randint(0,width), random.randint(0,height)
-        x2, y2 = random.randint(0,width), random.randint(0,height)
-        color = (random.randint(0,255), random.randint(0,255), random.randint(0,255))
-        draw.line((x1, y1, x2, y2), fill=color, width=1)
+    problem = f"{a} {operation} {b} = ?"
 
-    try:
-        font = ImageFont.truetype("arial.ttf", 50)
-    except:
-        font = ImageFont.load_default()
+    # 2. Rasm parametrlari
+    width, height = 600, 300
+    dpi = 100
+    fig, ax = plt.subplots(figsize=(width / dpi, height / dpi), dpi=dpi)
 
-    # 🔧 SHU YERDA XATOLIK BO‘LGANDI – TUZATILDI:
-    bbox = draw.textbbox((0, 0), misol, font=font)
-    text_w = bbox[2] - bbox[0]
-    text_h = bbox[3] - bbox[1]
-    text_x = (width - text_w) // 2
-    text_y = (height - text_h) // 2
+    # 3. Pastel fon
+    bg_color = np.array([random.randint(200, 240),
+                         random.randint(200, 240),
+                         random.randint(200, 240)]) / 255
+    fig.patch.set_facecolor(bg_color)
+    ax.set_xlim(0, width)
+    ax.set_ylim(0, height)
 
-    draw.text((text_x, text_y), misol, fill=(0, 0, 0), font=font)
+    # 4. Bezash uchun shakllar
+    for _ in range(15):
+        shape_type = random.choice(['circle', 'rectangle', 'ellipse'])
+        x = random.randint(0, width)
+        y = random.randint(0, height)
+        size = random.randint(20, 100)
+        color = to_rgba((random.random(), random.random(), random.random(), 0.1))
 
-    image.save("captcha.png")
-    return "captcha.png", javob
+        if shape_type == 'circle':
+            ax.add_patch(plt.Circle((x, y), size / 2, color=color, linewidth=0))
+        elif shape_type == 'rectangle':
+            ax.add_patch(Rectangle((x, y), size, size / 2, color=color, angle=random.randint(0, 45)))
+        else:
+            ax.add_patch(Ellipse((x, y), size, size / 2, angle=random.randint(0, 360), color=color, linewidth=0))
+
+    # 5. Chiziqlar
+    for _ in range(10):
+        x1, y1 = random.randint(0, width), random.randint(0, height)
+        x2, y2 = random.randint(0, width), random.randint(0, height)
+        ax.plot([x1, x2], [y1, y2],
+                color=(random.random(), random.random(), random.random(), random.uniform(0.05, 0.2)),
+                linewidth=random.uniform(0.5, 2),
+                linestyle='--')
+
+    # 6. Masalani yozish
+    ax.text(width / 2, height / 2, problem,
+            fontsize=48, ha='center', va='center', color='black', fontweight='bold',
+            bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5', alpha=0.8))
+
+    # 7. Yengil grid
+    for x in range(0, width, 40):
+        ax.axvline(x, color='white', alpha=0.1, linewidth=1)
+    for y in range(0, height, 40):
+        ax.axhline(y, color='white', alpha=0.1, linewidth=1)
+
+    ax.axis('off')
+    plt.tight_layout()
+
+    # 8. Faylni saqlash (doim bir xil nom)
+    filename = "captcha.png"
+    plt.savefig(filename, bbox_inches='tight', pad_inches=0.1, dpi=dpi)
+    plt.close()
+
+    return filename, javob
 
 def xato_captcha(update,context):
     file, ans = create_math_image()
@@ -195,25 +236,25 @@ def captcha(func):
     def wrapper(update: Update, context: CallbackContext, *args, **kwargs):
         if captchani_soni==1:
             return func(update, context, *args, **kwargs)
-        file, ans = create_math_image()
+        filename, javob = create_math_image()
         x1=random.randint(10,99)
         x2=random.randint(10,99)
         x3=random.randint(10,99)
 
-        context.user_data["true"] = f"Javob {ans}"
+        context.user_data["true"] = f"Javob {javob}"
         context.user_data["x1"] = f"Javob {x1}"
         context.user_data["x2"] = f"Javob {x2}"
         context.user_data["x3"] = f"Javob {x3}"
         button =[
             KeyboardButton(f"Javob {x1}"),
-            KeyboardButton(f"Javob {ans}"),
+            KeyboardButton(f"Javob {javob}"),
             KeyboardButton(f"Javob {x2}"),
             KeyboardButton(f"Javob {x3}"),
         ]
 
         random.shuffle(button)
 
-        photo = open(file, 'rb')
+        photo = open(filename, 'rb')
 
         reply_markup = ReplyKeyboardMarkup([button],resize_keyboard=True)
 
@@ -280,6 +321,8 @@ def adm(func):
 @captcha
 @block
 def start(update, context):
+    time.time()
+
     user_id = update.message.chat_id
     user_ids.add(user_id)
     ####################################################
@@ -384,6 +427,7 @@ def start(update, context):
     con.commit()
     cur.close()
     con.close()
+    
 @captcha
 @block
 def ism(update, context):
@@ -590,7 +634,8 @@ def kiruvchi_parol(update, context):
     except:
         update.message.reply_text(text="Parol xato kiritildi ❌ 👤")
 
-@adm
+
+@captcha
 @block
 def yorilgan_xabar(update, context):
     text = update.message.text
@@ -1494,6 +1539,7 @@ Foydalanuvchi ro'yxatdan o'tgan vaqti ⏳ 🔜 {i[4]}
     else:
         update.message.reply_text(f"➡️ {text} ⬅️ Bu so'zizga  tushunmadim\n\n🪐 Menyudan foydalanishingiz mumkin /menyu  🌿\n\n⭕️ Yoki pastda xabar yuboradigan joyda 4 ta nuqtani 🎛 bosing menyu ochiladi ❗️")
 
+@captcha
 @block
 def sms_ism(update, context):
     con = sqlite3.connect('hisoblar.db')
@@ -1511,6 +1557,7 @@ def sms_ism(update, context):
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
         return 'sms_ism'
+    
 @captcha
 @block
 def sms_xabar(update, context):
@@ -1581,6 +1628,7 @@ def sms_xabar(update, context):
         """)
     update.message.reply_text("Xabar muvaffaqiyatli yuborildi.✅")
     return 'TANLA'
+
 @captcha
 @block
 def ozgartirmoqchi_bolgan_qayd(update, context):
@@ -1637,6 +1685,7 @@ def adminga_savol_berish(update, context):
 
     update.message.reply_text("✨ Raxmat savol saqlandi 📩 sizga 2-3 soatlarda murojatga chiqadi\n\n👑")
     return 'TANLA'
+
 @captcha
 @block
 def ozgartirmoqchi_bolgan_qayd_nomi(update, context):
@@ -1727,6 +1776,7 @@ def ochirmoqchi_bolgan_qayd_nomi(update, context):
         update.message.reply_text("Uzur, bunday qayd nomi mavjud emas. ✅\n\nBoshqa qayd nomi kiriting 😉")
         update.message.reply_text("Qaydni kiriting 📝")
         return "ochirmoqchi_bolgan_qayd_nomi"
+    
 @captcha
 @block
 def yon_daftardagi_qaydni_korish_parol(update, context):
@@ -1768,6 +1818,7 @@ def qayd_nomi(update, context):
         update.message.reply_text(text="Raxmat ✅")
         update.message.reply_text(text="Qaydni kiriting 📝")
         return "qayd"
+    
 @captcha
 @block
 def qayd(update, context):
@@ -1841,6 +1892,7 @@ def Yon_daftar_ism(update, context):
                 update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
     except:
         update.message.reply_text(text="Bunday foydalanuvchi yo'q ❌ 👤")
+
 @captcha
 @block
 def Yon_daftar_parol(update, context):
@@ -2514,6 +2566,8 @@ def salom_yubor(bot: Bot,context):
 
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+@adm
 @captcha
 @block
 def admin(update,context):
@@ -2546,7 +2600,12 @@ def main():
     updater = Updater(token="7682208755:AAF_ndzUKIV0R-gvHQnXACL-B8ejf8dPcEc", use_context=True)
     dp = updater.dispatcher
     dp.add_handler(ConversationHandler(
-        entry_points=[CommandHandler('start', start),CommandHandler('admin', admin)],
+        entry_points=[
+            CommandHandler('start', start),
+            CommandHandler('admin', admin),
+            CommandHandler('help', help_command),
+            CommandHandler('menyu', menyi),
+            [MessageHandler(Filters.text & ~Filters.command, yorilgan_xabar)]],
         states={
             "TANLA": [MessageHandler(Filters.text & ~Filters.command, yorilgan_xabar)],
             "KIRUVCHI_ISM": [MessageHandler(Filters.text & ~Filters.command, kiruvchi_ism)],
@@ -2612,11 +2671,10 @@ def main():
     ])
 
 
-    # bot = updater.bot
-    # t = threading.Thread(target=salom_yubor, args=(bot,))
-    # t.start()
-    #
-    # # dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    bot = updater.bot
+    t = threading.Thread(target=salom_yubor, args=(bot,))
+    t.start()
+
 
     dp.add_handler(CallbackQueryHandler(colbeckdata))
 
@@ -2625,5 +2683,4 @@ def main():
 
 
 if __name__ == '__main__':
-
     main()
