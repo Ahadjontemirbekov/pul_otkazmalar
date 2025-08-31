@@ -8,12 +8,14 @@ from PIL import Image, ImageDraw, ImageFont
 import random
 from telegram import Bot
 import logging
-import datetime
 import sqlite3
+from datetime import datetime, date
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from functools import wraps
 
 games = {}
+REKLAMA_XABAR = 0
+REKLAMA_VAQT = 1
 
 captchani_soni = 0
 
@@ -101,6 +103,7 @@ admin_menyu = [
     [KeyboardButton("Foydalanuvchini bloklash 🚫"), KeyboardButton("Adminlik huquqini berish 🤝")],
     [KeyboardButton("Foydalanuvchini blokdan chiqarish 🫸🏻"), KeyboardButton("Adminlik huquqini olish ☠️")],
     [KeyboardButton("Blockdagilarni ko'rish 👀"), KeyboardButton("Adminlarni ko'rish 👀")],
+    [KeyboardButton("🌿✨ Reklama berish ❤️😜📸")],
 
 ]
 
@@ -294,7 +297,7 @@ def start(update, context):
     print(first_name)
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS start_bosganlar (
         id INTEGER,
@@ -478,7 +481,7 @@ def pul(update, context):
     first_name = update.message.from_user.first_name
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     ism = context.user_data['ism']
     familya = context.user_data['familya']
     yosh = context.user_data['yosh']
@@ -615,7 +618,7 @@ def kiruvchi_parol(update, context):
         update.message.reply_text(text="Parol xato kiritildi ❌ 👤")
 
 
-@captcha
+
 @block
 def yorilgan_xabar(update, context):
     text = update.message.text
@@ -630,7 +633,7 @@ def yorilgan_xabar(update, context):
     print(first_name)
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS yorilgan_xabar (
         id INTEGER,
@@ -713,6 +716,10 @@ def yorilgan_xabar(update, context):
     elif text == "Adminlik huquqini berish 🤝":
         update.message.reply_text(text="Adminlik huquqini bermoqchi bolgan foydalanuvchi 👤 telegram id si: ")
         return "adminlik_id"
+
+    elif text == "🌿✨ Reklama berish ❤️😜📸":
+        update.message.reply_text("Reklama matnini yuboring ✍️")
+        return "REKLAMA_XABAR"
 
 
     elif text.isdigit():
@@ -1562,7 +1569,7 @@ def sms_xabar(update, context):
     first_name = update.message.from_user.first_name
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS sms (
@@ -1654,7 +1661,7 @@ def adminga_savol_berish(update, context):
     print(first_name)
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS adminga_Savol (
         id INTEGER,
@@ -1831,7 +1838,7 @@ def qayd(update, context):
     print(first_name)
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS qaydlar (
         id INTEGER,
@@ -1979,7 +1986,7 @@ def YANGI_FOYDALANUVCHI_ISMI(update, context):
         print(first_name)
         last_name = update.message.from_user.last_name
         user_name = update.message.from_user.username
-        vaqt = datetime.datetime.now()
+        vaqt = datetime.now()
         context.bot.send_message(
             chat_id=CHANNEL_USERNAME,
             text=f"""
@@ -2060,7 +2067,7 @@ def YANGI_FOYDALANUVCHI_PAROLI(update, context):
     print(first_name)
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     context.bot.send_message(
         chat_id=CHANNEL_USERNAME,
         text=f"""
@@ -2123,7 +2130,7 @@ def SAVOL_BER(update, context):
     first_name = update.message.from_user.first_name
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     savol = update.message.text
     cur.execute("""
     CREATE TABLE IF NOT EXISTS savol_text (
@@ -2356,7 +2363,7 @@ def KARTADAN_KARTAGA(update, context):
             print(first_name)
             last_name = update.message.from_user.last_name
             user_name = update.message.from_user.username
-            vaqt = datetime.datetime.now()
+            vaqt = datetime.now()
             context.bot.send_message(
                 chat_id=CHANNEL_USERNAME,
                 text=f"""
@@ -2443,7 +2450,7 @@ def KARTAGA_PUL_YECHISH(update, context):
         print(first_name)
         last_name = update.message.from_user.last_name
         user_name = update.message.from_user.username
-        vaqt = datetime.datetime.now()
+        vaqt = datetime.now()
         context.bot.send_message(
             chat_id=CHANNEL_USERNAME,
             text=f"""
@@ -2487,7 +2494,7 @@ def KARTAGA_PUL_QOSHISH(update, context):
     print(first_name)
     last_name = update.message.from_user.last_name
     user_name = update.message.from_user.username
-    vaqt = datetime.datetime.now()
+    vaqt = datetime.now()
     context.bot.send_message(
         chat_id=CHANNEL_USERNAME,
         text=f"""
@@ -2594,10 +2601,108 @@ def menyi(update, context):
     cur.close()
     con.close()
 
+def reklama_xabar(update: Update, context: CallbackContext):
+    msg = update.message
+
+    if msg.text:
+        context.user_data['reklama_text'] = msg.text
+    elif msg.photo:
+        context.user_data['reklama_photo'] = msg.photo[-1].file_id
+        if msg.caption:
+            context.user_data['reklama_caption'] = msg.caption
+    elif msg.video:
+        context.user_data['reklama_video'] = msg.video.file_id
+        if msg.caption:
+            context.user_data['reklama_caption'] = msg.caption
+    elif msg.document:
+        context.user_data['reklama_document'] = msg.document.file_id
+        if msg.caption:
+            context.user_data['reklama_caption'] = msg.caption
+    elif msg.audio:
+        context.user_data['reklama_audio'] = msg.audio.file_id
+        if msg.caption:
+            context.user_data['reklama_caption'] = msg.caption
+    elif msg.voice:
+        context.user_data['reklama_voice'] = msg.voice.file_id
+        if msg.caption:
+            context.user_data['reklama_caption'] = msg.caption
+    elif msg.sticker:
+        context.user_data['reklama_sticker'] = msg.sticker.file_id
+    else:
+        update.message.reply_text("Bu turdagi xabarni qabul qilmayman. Iltimos rasm, video, text, audio, document yoki sticker yuboring.")
+        return 'REKLAMA_XABAR'
+
+    update.message.reply_text("Qaysi soatda yuborilsin? (HH:MM, faqat bugungi kun, hozirgi vaqtga nisbatan kelajak)")
+    return 'REKLAMA_VAQT'
+
+
+
+def reklama_vaqt(update: Update, context: CallbackContext):
+    vaqt_str = update.message.text.strip()
+
+    try:
+        # HH:MM formatini tekshirish
+        hour, minute = map(int, vaqt_str.split(':'))
+        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            raise ValueError("Soat yoki daqiqa noto‘g‘ri")
+
+        now = datetime.now()
+        target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+        # Hozirgi vaqtdan oldin bo'lsa xato
+        if target_time <= now:
+            update.message.reply_text(
+                "Hozirgi vaqtdan oldin yoki hozirgi vaqtdagi vaqtni belgilab bo‘lmaydi. Iltimos, kelajakdagi vaqtni kiriting."
+            )
+            return REKLAMA_VAQT
+
+        # JobQueue uchun sekundni hisoblash
+        delta_seconds = (target_time - now).total_seconds()
+        context.job_queue.run_once(yuborish_job, delta_seconds, context=context.user_data)
+
+        update.message.reply_text(f"Reklama xabaringiz {vaqt_str} da yuboriladi ✅")
+        return ConversationHandler.END
+
+    except Exception:
+        update.message.reply_text("Vaqtni noto‘g‘ri formatda kiritdingiz. Iltimos HH:MM formatida yozing.")
+        return REKLAMA_VAQT
+
+
+# JobQueue orqali yuborish
+def yuborish_job(context: CallbackContext):
+    data = context.job.context
+
+    # Foydalanuvchi IDlarini olish
+    con = sqlite3.connect('hisoblar.db')
+    cur = con.cursor()
+    cur.execute("SELECT DISTINCT id FROM start_bosganlar")
+    users = cur.fetchall()
+    con.close()
+
+    for user in users:
+        chat_id = user[0]
+        try:
+            if 'reklama_text' in data:
+                context.bot.send_message(chat_id=chat_id, text=data['reklama_text'])
+            elif 'reklama_photo' in data:
+                context.bot.send_photo(chat_id=chat_id, photo=data['reklama_photo'], caption=data.get('reklama_caption'))
+            elif 'reklama_video' in data:
+                context.bot.send_video(chat_id=chat_id, video=data['reklama_video'], caption=data.get('reklama_caption'))
+            elif 'reklama_document' in data:
+                context.bot.send_document(chat_id=chat_id, document=data['reklama_document'], caption=data.get('reklama_caption'))
+            elif 'reklama_audio' in data:
+                context.bot.send_audio(chat_id=chat_id, audio=data['reklama_audio'], caption=data.get('reklama_caption'))
+            elif 'reklama_voice' in data:
+                context.bot.send_voice(chat_id=chat_id, voice=data['reklama_voice'], caption=data.get('reklama_caption'))
+            elif 'reklama_sticker' in data:
+                context.bot.send_sticker(chat_id=chat_id, sticker=data['reklama_sticker'])
+        except Exception as e:
+            print(f"Xabar yuborilmadi: {chat_id} - {e}")
+
 
 def salom_yubor(bot: Bot, context):
     while True:
-        hozir = datetime.datetime.now()
+        hozir = datetime.now()
         if hozir.hour == 7 and hozir.minute == 0:
             bugungi_kun = hozir.weekday()
             matn = kunlik_salomlar.get(bugungi_kun, "😊 Bugun ajoyib kun!")
@@ -2628,7 +2733,6 @@ def admin(update, context):
     n = cur.fetchone()
     con.close()
     if n:
-
         update.message.reply_text("Admin paneliga xush kelibsiz 🤟🏻",
                                   reply_markup=(ReplyKeyboardMarkup(admin_menyu, resize_keyboard=True)))
         return "TANLA"
@@ -2651,7 +2755,7 @@ def main():
             CommandHandler('admin', admin),
             CommandHandler('help', help_command),
             CommandHandler('menyu', menyi),
-            [MessageHandler(Filters.text & ~Filters.command, yorilgan_xabar)]],
+            MessageHandler(Filters.text & ~Filters.command, yorilgan_xabar)],
         states={
             "TANLA": [MessageHandler(Filters.text & ~Filters.command, yorilgan_xabar)],
             "KIRUVCHI_ISM": [MessageHandler(Filters.text & ~Filters.command, kiruvchi_ism)],
@@ -2704,6 +2808,8 @@ def main():
             "adminga_savol_berish": [MessageHandler(Filters.text & ~Filters.command, adminga_savol_berish)],
             "bocklash_id": [MessageHandler(Filters.text & ~Filters.command, bocklash_id)],
             "adminlik_id": [MessageHandler(Filters.text & ~Filters.command, adminlik_id)],
+            'REKLAMA_XABAR': [MessageHandler(Filters.all & ~Filters.command, reklama_xabar)],
+            'REKLAMA_VAQT': [MessageHandler(Filters.text & ~Filters.command, reklama_vaqt)]
         },
         fallbacks=[CommandHandler('tugash', clear), CommandHandler('start', start),
                    CommandHandler('help', help_command), CommandHandler('admin', admin), CommandHandler('menyu', menyi)]
@@ -2717,10 +2823,9 @@ def main():
     ])
 
     bot = updater.bot
-    t = threading.Thread(target=salom_yubor, args=(bot,))
+    t = threading.Thread(target=salom_yubor, args=(bot, None))  # context parametri qo'shildi
+    t.daemon = True  # Dastur tugasa thread ham tugatiladi
     t.start()
-
-    dp.add_handler(CallbackQueryHandler(colbeckdata))
 
     updater.start_polling()
     updater.idle()
