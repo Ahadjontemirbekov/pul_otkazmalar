@@ -2750,7 +2750,7 @@ def main():
     # youre  token 7682208755:AAF_ndzUKIV0R-gvHQnXACL-B8ejf8dPcEc
     # boshqa token codrlarni tokeni 7827433962:AAGkvZ4AyxHhQqfMnK6XCcJLfnbw1FOd3Nc
     # boshqa token isntagram tokeni 7612911654:AAHMBB5BFFITsCij-H3U000fE2_m2P99W3A
-    updater = Updater(token="7682208755:AAF_ndzUKIV0R-gvHQnXACL-B8ejf8dPcEc", use_context=True)
+    updater = Updater(token="7827433962:AAGkvZ4AyxHhQqfMnK6XCcJLfnbw1FOd3Nc", use_context=True)
     dp = updater.dispatcher
     dp.add_handler(ConversationHandler(
         entry_points=[
